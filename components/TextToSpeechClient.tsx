@@ -385,7 +385,7 @@ export const TextToSpeechClient = () => {
 						value={text}
 						onChange={e => setText(e.target.value)}
 						placeholder="Type something here..."
-						className="bg-transparent border-none text-white placeholder-gray-500 text-base lg:text-lg resize-none min-h-[100px] lg:min-h-[120px] focus:ring-0 focus:outline-none pr-4 focus-visible:ring-0 mb-4 w-full"
+						className="bg-transparent border-none text-white placeholder-gray-500 text-base lg:text-lg resize-none min-h-[100px] lg:min-h-[120px] focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none pr-4 mb-4 w-full"
 					/>
 
 					{/* Bottom Controls Bar */}
