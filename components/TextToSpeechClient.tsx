@@ -58,6 +58,11 @@ export const TextToSpeechClient = () => {
 
 			const loadVoices = () => {
 				const availableVoices = globalThis.speechSynthesis.getVoices();
+				if (availableVoices.length === 0) {
+					// On mobile, voices might not be loaded yet, retry
+					setTimeout(loadVoices, 200);
+					return;
+				}
 				const sortedVoices = availableVoices.toSorted((a, b) => {
 					if (a.lang !== b.lang) {
 						return a.lang.localeCompare(b.lang);
@@ -76,7 +81,10 @@ export const TextToSpeechClient = () => {
 
 			loadVoices();
 			globalThis.speechSynthesis.onvoiceschanged = loadVoices;
+			// Multiple timeouts for mobile browsers that load voices asynchronously
 			setTimeout(loadVoices, 100);
+			setTimeout(loadVoices, 500);
+			setTimeout(loadVoices, 1000);
 		}
 
 		// Cleanup: cancel any ongoing speech synthesis when component unmounts
@@ -88,7 +96,7 @@ export const TextToSpeechClient = () => {
 				globalThis.speechSynthesis.cancel();
 			}
 		};
-	}, [selectedVoice]);
+	}, []);
 
 	// Handle browser reload - cancel speech synthesis before page unloads
 	useEffect(() => {
@@ -119,11 +127,24 @@ export const TextToSpeechClient = () => {
 			return;
 		}
 
+		// Get fresh voices list - important for mobile browsers
+		const availableVoices = speechSynthesis.getVoices();
 		const utterance = new SpeechSynthesisUtterance(text);
-		const voice = voices.find(v => v.name === selectedVoice);
 
-		if (voice) {
-			utterance.voice = voice;
+		// Find voice by exact name match from fresh voices list (more reliable on mobile)
+		let selectedVoiceObj = availableVoices.find(v => v.name === selectedVoice);
+
+		// Fallback: try partial name match if exact match fails (mobile browsers sometimes have name variations)
+		if (!selectedVoiceObj && selectedVoice) {
+			selectedVoiceObj = availableVoices.find(
+				v =>
+					v.name.toLowerCase().includes(selectedVoice.toLowerCase()) ||
+					selectedVoice.toLowerCase().includes(v.name.toLowerCase())
+			);
+		}
+
+		if (selectedVoiceObj) {
+			utterance.voice = selectedVoiceObj;
 		}
 
 		utterance.rate = 1;
@@ -307,6 +328,14 @@ export const TextToSpeechClient = () => {
 
 		speechSynthesis.cancel();
 
+		// Get fresh voices list for mobile compatibility
+		const availableVoices = speechSynthesis.getVoices();
+		// Find the voice from fresh list to ensure we have a valid reference
+		const freshVoice =
+			availableVoices.find(
+				v => v.name === voice.name && v.lang === voice.lang
+			) || voice;
+
 		const getTestText = (lang: string): string => {
 			const langBase = lang.split("-")[0];
 			const testTexts: { [key: string]: string } = {
@@ -331,9 +360,9 @@ export const TextToSpeechClient = () => {
 			return testTexts[langBase] || testTexts["en"];
 		};
 
-		const testText = getTestText(voice.lang);
+		const testText = getTestText(freshVoice.lang);
 		const utterance = new SpeechSynthesisUtterance(testText);
-		utterance.voice = voice;
+		utterance.voice = freshVoice;
 		utterance.rate = 1;
 		utterance.pitch = 1;
 		utterance.volume = 1;
