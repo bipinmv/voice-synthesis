@@ -11,14 +11,21 @@
   </style>
   <rect class="background" width="180" height="180" rx="37" />
   <g transform="translate(90, 90)">
-    <!-- Microphone body -->
-    <rect class="foreground" x="-20" y="-40" width="40" height="60" rx="20" />
-    <!-- Microphone stand -->
-    <rect class="foreground" x="-4" y="20" width="8" height="30" rx="4" />
-    <!-- Sound waves -->
-    <path class="foreground" d="M 30 0 Q 50 -20 50 -40 Q 50 -60 30 -60" stroke-width="6" fill="none" stroke-linecap="round" />
-    <path class="foreground" d="M 30 0 Q 60 -20 60 -50 Q 60 -80 30 -80" stroke-width="6" fill="none" stroke-linecap="round" />
-    <path class="foreground" d="M -30 0 Q -50 -20 -50 -40 Q -50 -60 -30 -60" stroke-width="6" fill="none" stroke-linecap="round" />
-    <path class="foreground" d="M -30 0 Q -60 -20 -60 -50 Q -60 -80 -30 -80" stroke-width="6" fill="none" stroke-linecap="round" />
+    <!-- Microphone capsule body -->
+    <ellipse class="foreground" cx="0" cy="-10" rx="18" ry="28" />
+    <!-- Grille lines -->
+    <line class="foreground" x1="-12" y1="-25" x2="12" y2="-25" stroke-width="2" stroke-linecap="round" />
+    <line class="foreground" x1="-12" y1="-15" x2="12" y2="-15" stroke-width="2" stroke-linecap="round" />
+    <line class="foreground" x1="-12" y1="-5" x2="12" y2="-5" stroke-width="2" stroke-linecap="round" />
+    <line class="foreground" x1="-12" y1="5" x2="12" y2="5" stroke-width="2" stroke-linecap="round" />
+    <!-- Microphone stand/base -->
+    <rect class="foreground" x="-3" y="18" width="6" height="25" rx="3" />
+    <rect class="foreground" x="-12" y="43" width="24" height="4" rx="2" />
+    <!-- Sound waves on left -->
+    <path class="foreground" d="M -25 0 Q -35 -10 -35 -20 Q -35 -30 -25 -30" stroke-width="5" fill="none" stroke-linecap="round" />
+    <path class="foreground" d="M -25 0 Q -40 -10 -40 -25 Q -40 -40 -25 -40" stroke-width="5" fill="none" stroke-linecap="round" />
+    <!-- Sound waves on right -->
+    <path class="foreground" d="M 25 0 Q 35 -10 35 -20 Q 35 -30 25 -30" stroke-width="5" fill="none" stroke-linecap="round" />
+    <path class="foreground" d="M 25 0 Q 40 -10 40 -25 Q 40 -40 25 -40" stroke-width="5" fill="none" stroke-linecap="round" />
   </g>
 </svg>
