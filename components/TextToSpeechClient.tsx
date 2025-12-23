@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -22,35 +22,9 @@ export const TextToSpeechClient = () => {
 	const [selectedVoice, setSelectedVoice] = useState<string>("");
 	const [speechSynthesis, setSpeechSynthesis] =
 		useState<SpeechSynthesis | null>(null);
-	const [currentSuggestionIndex, setCurrentSuggestionIndex] = useState(0);
-	const [visibleSuggestions, setVisibleSuggestions] = useState(3);
-
-	useEffect(() => {
-		const updateVisibleSuggestions = () => {
-			const width = window.innerWidth;
-			if (width >= 1280) {
-				// xl
-				setVisibleSuggestions(5);
-			} else if (width >= 1024) {
-				// lg
-				setVisibleSuggestions(4);
-			} else if (width >= 768) {
-				// md
-				setVisibleSuggestions(3);
-			} else if (width >= 640) {
-				// sm
-				setVisibleSuggestions(2);
-			} else {
-				setVisibleSuggestions(1);
-			}
-		};
-
-		updateVisibleSuggestions();
-		window.addEventListener("resize", updateVisibleSuggestions);
-		return () => window.removeEventListener("resize", updateVisibleSuggestions);
-	}, []);
-
-	const maxIndex = Math.max(0, suggestions.length - visibleSuggestions);
+	const scrollContainerRef = useRef<HTMLDivElement>(null);
+	const [canScrollLeft, setCanScrollLeft] = useState(false);
+	const [canScrollRight, setCanScrollRight] = useState(true);
 
 	useEffect(() => {
 		if (typeof globalThis !== "undefined" && "speechSynthesis" in globalThis) {
@@ -180,12 +154,48 @@ export const TextToSpeechClient = () => {
 		setSelectedVoice(newVoice);
 	};
 
-	const nextSuggestions = () => {
-		setCurrentSuggestionIndex(prev => Math.min(prev + 1, maxIndex));
+	const updateScrollButtons = () => {
+		if (!scrollContainerRef.current) return;
+		const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
+		setCanScrollLeft(scrollLeft > 0);
+		setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
 	};
 
-	const prevSuggestions = () => {
-		setCurrentSuggestionIndex(prev => Math.max(prev - 1, 0));
+	useEffect(() => {
+		// Update scroll buttons after a short delay to ensure DOM is fully rendered
+		const timeoutId = setTimeout(() => {
+			updateScrollButtons();
+		}, 100);
+
+		const container = scrollContainerRef.current;
+		if (container) {
+			container.addEventListener("scroll", updateScrollButtons);
+			window.addEventListener("resize", updateScrollButtons);
+			return () => {
+				clearTimeout(timeoutId);
+				container.removeEventListener("scroll", updateScrollButtons);
+				window.removeEventListener("resize", updateScrollButtons);
+			};
+		}
+		return () => clearTimeout(timeoutId);
+	}, []);
+
+	const scrollLeft = () => {
+		if (!scrollContainerRef.current) return;
+		const scrollAmount = scrollContainerRef.current.clientWidth * 0.8;
+		scrollContainerRef.current.scrollBy({
+			left: -scrollAmount,
+			behavior: "smooth"
+		});
+	};
+
+	const scrollRight = () => {
+		if (!scrollContainerRef.current) return;
+		const scrollAmount = scrollContainerRef.current.clientWidth * 0.8;
+		scrollContainerRef.current.scrollBy({
+			left: scrollAmount,
+			behavior: "smooth"
+		});
 	};
 
 	const getCountryFlag = (lang: string): string => {
@@ -382,14 +392,14 @@ export const TextToSpeechClient = () => {
 	return (
 		<>
 			{/* Main Interface */}
-			<div className="max-w-6xl mx-auto">
+			<div className="max-w-6xl w-full mx-auto px-2 sm:px-4">
 				<div className="flex items-center justify-between mb-8 lg:mb-12 px-4 lg:px-8">
 					<AudioVisualization isPlaying={isPlaying} />
 					<AudioVisualization isPlaying={isPlaying} />
 				</div>
 
 				{/* Text Input Area with Integrated Controls */}
-				<div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-4 lg:p-6 border border-gray-700 relative mx-2 lg:mx-0">
+				<div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-4 lg:p-6 border border-gray-700 relative mx-auto">
 					<Textarea
 						value={text}
 						onChange={e => setText(e.target.value)}
@@ -398,43 +408,41 @@ export const TextToSpeechClient = () => {
 					/>
 
 					{/* Bottom Controls Bar */}
-					<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+					<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 w-full">
 						{/* Left: Navigation and Suggestions */}
-						<div className="flex items-center gap-2 flex-1 min-w-0 order-2 sm:order-1">
+						<div className="flex items-center gap-2 flex-1 min-w-0 order-2 sm:order-1 w-full">
 							<Button
 								size="sm"
 								variant="ghost"
 								className="w-8 h-8 p-0 text-gray-400 hover:text-white hover:bg-gray-700 flex-shrink-0"
-								onClick={prevSuggestions}
-								disabled={currentSuggestionIndex === 0}
+								onClick={scrollLeft}
+								disabled={!canScrollLeft}
 							>
 								<ChevronLeft className="w-4 h-4" />
 							</Button>
 
-							<div className="flex gap-1 sm:gap-2 overflow-hidden flex-1 min-w-0">
-								{suggestions
-									.slice(
-										currentSuggestionIndex,
-										currentSuggestionIndex + visibleSuggestions
-									)
-									.map((suggestion, index) => (
-										<Badge
-											key={currentSuggestionIndex + index}
-											variant="secondary"
-											className="bg-gray-700/50 hover:bg-gray-600/50 text-white px-2 sm:px-3 py-1 cursor-pointer transition-colors border border-gray-600 text-xs whitespace-nowrap flex-shrink-0"
-											onClick={() => handleSuggestionClick(suggestion)}
-										>
-											{suggestion.title}
-										</Badge>
-									))}
+							<div
+								ref={scrollContainerRef}
+								className="flex gap-1 sm:gap-2 overflow-x-auto flex-1 min-w-0 w-full scrollbar-hide"
+							>
+								{suggestions.map(suggestion => (
+									<Badge
+										key={suggestion.title}
+										variant="secondary"
+										className="bg-gray-700/50 hover:bg-gray-600/50 text-white px-2 sm:px-3 py-1 cursor-pointer transition-colors border border-gray-600 text-xs whitespace-nowrap flex-shrink-0"
+										onClick={() => handleSuggestionClick(suggestion)}
+									>
+										{suggestion.title}
+									</Badge>
+								))}
 							</div>
 
 							<Button
 								size="sm"
 								variant="ghost"
 								className="w-8 h-8 p-0 text-gray-400 hover:text-white hover:bg-gray-700 flex-shrink-0"
-								onClick={nextSuggestions}
-								disabled={currentSuggestionIndex >= maxIndex}
+								onClick={scrollRight}
+								disabled={!canScrollRight}
 							>
 								<ChevronRight className="w-4 h-4" />
 							</Button>
