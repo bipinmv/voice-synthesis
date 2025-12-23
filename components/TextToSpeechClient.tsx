@@ -171,6 +171,15 @@ export const TextToSpeechClient = () => {
 		setText(suggestion.content);
 	};
 
+	const handleVoiceChange = (newVoice: string) => {
+		// Stop any ongoing playback immediately when switching voices
+		if (speechSynthesis && isPlaying) {
+			speechSynthesis.cancel();
+			setIsPlaying(false);
+		}
+		setSelectedVoice(newVoice);
+	};
+
 	const nextSuggestions = () => {
 		setCurrentSuggestionIndex(prev => Math.min(prev + 1, maxIndex));
 	};
@@ -437,7 +446,7 @@ export const TextToSpeechClient = () => {
 							<div className="flex items-center gap-2">
 								<div className="w-1 h-1 bg-green-400 rounded-full animate-pulse"></div>
 								<Volume2 className="w-3 h-3 text-gray-400" />
-								<Select value={selectedVoice} onValueChange={setSelectedVoice}>
+								<Select value={selectedVoice} onValueChange={handleVoiceChange}>
 									<SelectTrigger className="w-28 lg:w-32 h-8 bg-transparent border-none text-white text-xs focus:ring-0 focus:outline-none">
 										<SelectValue placeholder="Voice">
 											{selectedVoice && (
